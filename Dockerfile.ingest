@@ -1,0 +1,18 @@
+# Use the same base image as the main application
+FROM python:3.11-slim
+
+# Set the working directory
+WORKDIR /app
+
+# Copy dependency file
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+COPY . .
+
+# Command to run the ingestion script
+# This will create the vector store and then exit
+CMD ["python", "-c", "from app.components.vector_store import create_vector_store; create_vector_store()"]
