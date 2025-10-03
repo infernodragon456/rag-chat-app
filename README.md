@@ -1,168 +1,331 @@
-# 🔍 AI RAG Chatbot
+# MEDICAL RAG CHATBOT
 
-This is a sophisticated AI-powered chatbot that uses the Retrieval-Augmented Generation (RAG) architecture to answer questions based on a provided set of documents. It is built with Python, Flask, and the LangChain library, featuring a simple web interface for interaction.
+## Clone the Project
 
-## ✨ Features
-
-- **Conversational Interface**: Remembers previous parts of the conversation to provide context-aware answers.
-- **Retrieval-Augmented Generation (RAG)**: Provides answers based on information found in your own documents, reducing hallucinations and providing factual responses.
-- **Web UI**: A clean and simple web interface for asking questions and viewing responses.
-- **Powered by Open Source**: Utilizes Hugging Face for powerful language models and FAISS for efficient vector storage.
-- **Containerized**: Comes with a `Dockerfile` for easy setup and deployment.
-
-## 🛠️ Tech Stack
-
-- **Backend**: Python, Flask
-- **AI/ML**: LangChain, Hugging Face Transformers, FAISS
-- **Frontend**: HTML, CSS
-- **Containerization**: Docker
-
-## 📂 Project Structure
-
-The project is organized into several directories, each with a specific purpose:
-
-```
-rag_chatbot/
-├── app/
-│   ├── __init__.py
-│   ├── application.py          # Main Flask application, handles routing and UI
-│   ├── common/                 # Shared utilities
-│   │   ├── custom_exception.py # Custom exception handling
-│   │   └── logger.py           # Standardized logging setup
-│   ├── components/             # Core components of the RAG pipeline
-│   │   ├── data_loader.py      # Loads documents from the data directory
-│   │   ├── embeddings.py       # Generates embeddings for text
-│   │   ├── llm.py              # Loads the language model from Hugging Face
-│   │   ├── retriever.py        # Sets up the conversational retrieval chain
-│   │   └── vector_store.py     # Creates and loads the FAISS vector store
-│   ├── config/
-│   │   └── config.py           # Project configuration (paths, model names, etc.)
-│   └── templates/
-│       └── index.html          # Frontend HTML and CSS
-├── data/                       # Place your source documents here (e.g., PDFs)
-├── logs/                       # Application logs are stored here
-├── vectorstore/                # Stores the generated FAISS vector index
-├── Dockerfile                  # For building the Docker container
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
+```bash
+git clone https://github.com/data-guru0/LLMOPS-2-TESTING-MEDICAL.git
+cd LLMOPS-2-TESTING-MEDICAL
 ```
 
-## 🚀 Getting Started
+## Create a Virtual Environment (Windows)
 
-There are two ways to set up and run this project: using Docker (recommended) or setting it up locally.
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
 
-### Prerequisites
+## Install Dependencies
 
-- **Hugging Face API Token**: You will need a Hugging Face account and an API token with at least `read` permissions. You can get one from [Hugging Face Account Settings](https://huggingface.co/settings/tokens).
+```bash
+pip install -e .
+```
 
-### 1. Docker Setup (Recommended)
+## ✅ Prerequisites Checklist (Complete These Before Moving Forward)
 
-1.  **Clone the Repository**
+- [ ] **Docker Desktop** is installed and running in the background
+- [ ] **Code versioning** is properly set up using GitHub (repository pushed and updated)
+- [ ] **Dockerfile** is created and configured for the project
+- [ ] **Dockerfile** is also created and configured for **Jenkins**
 
-    ```sh
-    git clone <your-repo-url>
-    cd rag_chatbot
-    ```
+## ==> 1. 🚀 Jenkins Setup for Deployment
 
-2.  **Create an Environment File**
-    Create a file named `.env` in the project root and add your Hugging Face token:
+### 1. Create Jenkins Setup Directory and Dockerfile
 
-    ```
-    HF_TOKEN="your_hugging_face_api_token"
-    ```
+- Create a folder named `custom_jenkins`
+- Inside `custom_jenkins`, create a `Dockerfile` and add the necessary Jenkins + Docker-in-Docker configuration code
 
-3.  **Add Your Data**
-    Place the documents you want the chatbot to use (e.g., `.pdf` files) into the `data/` directory.
+### 2. Build Jenkins Docker Image
 
-4.  **Build and Run the Ingestion Service**
-    Before starting the chatbot, you need to process your documents and create a vector store.
+Open terminal and navigate to the folder:
 
-    ```sh
-    # Build an image specifically for ingestion
-    docker build -t rag-ingestion -f Dockerfile.ingest .
+```bash
+cd custom_jenkins
+```
 
-    # Run the ingestion container. This will load docs, create embeddings, and save the store.
-    docker run --rm -v ./vectorstore:/app/vectorstore -v ./data:/app/data rag-ingestion
-    ```
+Make sure **Docker Desktop is running in the background**, then build the image:
 
-5.  **Build and Run the Chatbot Application**
+```bash
+docker build -t jenkins-dind .
+```
 
-    ```sh
-    # Build the main application image
-    docker build -t rag-chatbot .
+### 3. Run Jenkins Container
 
-    # Run the application container
-    docker run -p 5000:5000 --env-file .env -v ./vectorstore:/app/vectorstore rag-chatbot
-    ```
+```bash
+docker run -d ^
+  --name jenkins-dind ^
+  --privileged ^
+  -p 8080:8080 ^
+  -p 50000:50000 ^
+  -v /var/run/docker.sock:/var/run/docker.sock ^
+  -v jenkins_home:/var/jenkins_home ^
+  jenkins-dind
+```
 
-6.  **Access the Chatbot**
-    Open your browser and navigate to `http://localhost:5000`.
+> ✅ If successful, you’ll get a long alphanumeric container ID
 
-### 2. Local Setup
+### 4. Check Jenkins Logs and Get Initial Password
 
-1.  **Clone the Repository**
+```bash
+docker ps
+docker logs jenkins-dind
+```
 
-    ```sh
-    git clone <your-repo-url>
-    cd rag_chatbot
-    ```
+If the password isn’t visible, run:
 
-2.  **Create a Virtual Environment**
+```bash
+docker exec jenkins-dind cat /var/jenkins_home/secrets/initialAdminPassword
+```
 
-    ```sh
-    python -m venv venv
-    # On Windows
-    venv\Scripts\activate
-    # On macOS/Linux
-    source venv/bin/activate
-    ```
+### 5. Access Jenkins Dashboard
 
-3.  **Install Dependencies**
+- Open your browser and go to: [http://localhost:8080](http://localhost:8080)
 
-    ```sh
-    pip install -r requirements.txt
-    ```
+### 6. Install Python Inside Jenkins Container
 
-4.  **Set Environment Variable**
-    Create a file named `.env` in the project root and add your token:
+Back in the terminal:
 
-    ```
-    HF_TOKEN="your_hugging_face_api_token"
-    ```
+```bash
+docker exec -u root -it jenkins-dind bash
+apt update -y
+apt install -y python3
+python3 --version
+ln -s /usr/bin/python3 /usr/bin/python
+python --version
+apt install -y python3-pip
+exit
+```
 
-5.  **Add Your Data**
-    Place your documents into the `data/` directory.
+### 7. Restart Jenkins Container
 
-6.  **Generate the Vector Store**
-    Run the following command from the project root to process your documents and create the FAISS index. This only needs to be done once, or whenever you update the documents in the `data` folder.
+```bash
+docker restart jenkins-dind
+```
 
-    ```sh
-    python -c "from app.components.vector_store import create_vector_store; create_vector_store()"
-    ```
+### 8. Go to Jenkins Dashboard and Sign In Again
 
-7.  **Run the Application**
+## ==> 2. 🔗 Jenkins Integration with GitHub
 
-    ```sh
-    flask run --host=0.0.0.0
-    ```
+### 1. Generate a GitHub Personal Access Token
 
-8.  **Access the Chatbot**
-    Open your browser and navigate to `http://localhost:5000`.
+- Go to **GitHub** → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
+- Click **Generate new token (classic)**
+- Provide:
+  - A **name** (e.g., `Jenkins Integration`)
+  - Select scopes:
+    - `repo` (for full control of private repositories)
+    - `admin:repo_hook` (for webhook integration)
 
-## ⚙️ How It Works: The RAG Pipeline
+- Generate the token and **save it securely** (you won’t see it again!).
 
-This application uses a Retrieval-Augmented Generation (RAG) pipeline to provide answers.
+> ℹ️ **What is this token?**
+> A GitHub token is a secure way to authenticate Jenkins (or any CI/CD tool) to access your GitHub repositories without needing your GitHub password. It's safer and recommended over using plain credentials.
 
-1.  **Data Ingestion (Offline Step)**:
+---
 
-    - Documents in the `/data` directory are loaded and split into smaller, manageable chunks.
-    - A sentence-transformer model generates a vector embedding for each chunk, converting the text into a numerical representation.
-    - These embeddings are stored in a FAISS vector index in the `/vectorstore` directory for fast similarity searches.
+### 2. Add GitHub Token to Jenkins Credentials
 
-2.  **Inference (Online Step)**:
-    - When you ask a question, the same sentence-transformer model converts your question into a vector embedding.
-    - This question vector is used to search the FAISS index for the most similar document chunks (i.e., the most relevant information).
-    - The retrieved document chunks and your original question are combined into a prompt.
-    - This combined prompt is sent to a large language model (`mistralai/Mistral-7B-Instruct-v0.3`) from Hugging Face.
-    - The language model generates a final, human-readable answer based on the context provided by the retrieved documents.
-    - The chat history is maintained to allow for follow-up questions.
+- Go to **Jenkins Dashboard** → **Manage Jenkins** → **Credentials** → **(Global)** → **Add Credentials**
+- Fill in the following:
+  - **Username:** Your GitHub username
+  - **Password:** Paste the GitHub token you just generated
+  - **ID:** `github-token`
+  - **Description:** `GitHub Token for Jenkins`
+
+Click **Save**.
+
+---
+
+### 3. Create a New Pipeline Job in Jenkins
+
+- Go back to **Jenkins Dashboard**
+- Click **New Item** → Select **Pipeline**
+- Enter a name (e.g., `medical-rag-pipeline`)
+- Click **OK** → Scroll down, configure minimal settings → Click **Save**
+
+> ⚠️ You will have to configure pipeline details **again** in the next step
+
+---
+
+### 4. Generate Checkout Script from Jenkins UI
+
+- In the left sidebar of your pipeline project, click **Pipeline Syntax**
+- From the dropdown, select **`checkout: General SCM`**
+- Fill in:
+  - SCM: Git
+  - Repository URL: Your GitHub repo URL
+  - Credentials: Select the `github-token` you just created
+- Click **Generate Pipeline Script**
+- Copy the generated Groovy script (e.g., `checkout([$class: 'GitSCM', ...])`)
+
+---
+
+### 5. Create a `Jenkinsfile` in Your Repo ( Already done )
+
+- Open your project in **VS Code**
+- Create a file named `Jenkinsfile` in the root directory
+
+
+### 6. Push the Jenkinsfile to GitHub
+
+```bash
+git add Jenkinsfile
+git commit -m "Add Jenkinsfile for CI pipeline"
+git push origin main
+```
+
+---
+
+### 7. Trigger the Pipeline
+
+- Go to **Jenkins Dashboard** → Select your pipeline → Click **Build Now**
+
+🎉 **You’ll see a SUCCESS message if everything works!**
+
+✅ **Your GitHub repository has been cloned inside Jenkins’ workspace!**
+
+---
+
+> 🔁 If you already cloned the repo with a `Jenkinsfile` in it, you can skip creating a new one manually.
+
+## ==> 3. 🐳 Build Docker Image, Scan with Trivy, and Push to AWS ECR
+
+### 1. Install Trivy in Jenkins Container
+
+```bash
+docker exec -u root -it jenkins-dind bash
+apt install -y
+curl -LO https://github.com/aquasecurity/trivy/releases/download/v0.62.1/trivy_0.62.1_Linux-64bit.deb
+dpkg -i trivy_0.62.1_Linux-64bit.deb
+trivy --version
+exit
+```
+
+Then restart the container:
+
+```bash
+docker restart jenkins-dind
+```
+
+---
+
+### 2. Install AWS Plugins in Jenkins
+
+- Go to **Jenkins Dashboard** → **Manage Jenkins** → **Plugins**
+- Install:
+  - **AWS SDK**
+  - **AWS Credentials**
+- Restart the Jenkins container:
+
+```bash
+docker restart jenkins-dind
+```
+
+---
+
+### 3. Create IAM User in AWS
+
+- Go to **AWS Console** → **IAM** → **Users** → **Add User**
+- Assign **programmatic access**
+- Attach policy: `AmazonEC2ContainerRegistryFullAccess`
+- After creation, generate **Access Key + Secret**
+
+---
+
+### 4. Add AWS Credentials to Jenkins
+
+- Go to **Jenkins Dashboard** → **Manage Jenkins** → **Credentials**
+- Click on **(Global)** → **Add Credentials**
+- Select **AWS Credentials**
+- Add:
+  - **Access Key ID**
+  - **Secret Access Key**
+- Give an ID (e.g., `aws-ecr-creds`) and Save
+
+---
+
+### 5. Install AWS CLI Inside Jenkins Container
+
+```bash
+docker exec -u root -it jenkins-dind bash
+apt update
+apt install -y unzip curl
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+./aws/install
+aws --version
+exit
+```
+
+---
+
+### 6. Create an ECR Repository
+
+- Go to AWS Console → ECR → Create Repository
+- Note the **repository URI**
+
+---
+
+### 7. Add Build, Scan, and Push Stage in Jenkinsfile (  Already done if cloned )
+
+
+
+> 🔐 **Tip**: Change `--exit-code 0` to `--exit-code 1` in Trivy to make the pipeline fail on vulnerabilities.
+
+---
+
+### 8. Fix Docker Daemon Issues (If Any)
+
+If you encounter Docker socket permission issues, fix with:
+
+```bash
+docker exec -u root -it jenkins-dind bash
+chown root:docker /var/run/docker.sock
+chmod 660 /var/run/docker.sock
+getent group docker
+# If group 'docker' exists, skip next line
+usermod -aG docker jenkins
+exit
+
+docker restart jenkins-dind
+```
+
+Then open **Jenkins Dashboard** again to continue.
+
+## ==> 4. 🚀 Deployment to AWS App Runner
+
+### ✅ Prerequisites
+
+1. **Jenkinsfile Deployment Stage** ( Already done if cloned )
+
+### 🔐 IAM User Permissions
+
+- Go to **AWS Console** → **IAM** → Select your Jenkins user
+- Attach the policy: `AWSAppRunnerFullAccess`
+
+---
+
+### 🌐 Setup AWS App Runner (Manual Step)
+
+1. Go to **AWS Console** → **App Runner**
+2. Click **Create service**
+3. Choose:
+   - **Source**: Container registry (ECR)
+   - Select your image from ECR
+4. Configure runtime, CPU/memory, and environment variables
+5. Set auto-deploy from ECR if desired
+6. Deploy the service
+
+📺 Follow the tutorial video instructions for correct setup
+
+---
+
+### 🧪 Run Jenkins Pipeline
+
+- Go to **Jenkins Dashboard** → Select your pipeline job
+- Click **Build Now**
+
+If all stages succeed (Checkout → Build → Trivy Scan → Push to ECR → Deploy to App Runner):
+
+🎉 **CI/CD Deployment to AWS App Runner is complete!**
+
+✅ Your app is now live and running on AWS 🚀
